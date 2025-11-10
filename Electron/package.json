@@ -1,0 +1,83 @@
+{
+  "name": "grovegrab-electron",
+  "version": "1.0.0",
+  "description": "GroveGrab - Spotify Playlist Downloader",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\" \"wait-on http://localhost:5173 && electron .\"",
+    "start:backend": "cd ../Backend && .venv/Scripts/activate && python app.py",
+    "start:frontend": "cd ../Client && npm run dev"
+  },
+  "build": {
+    "appId": "com.grovegrab.app",
+    "productName": "GroveGrab",
+    "icon": "assets/icon.png",
+    "directories": {
+      "output": "../Distribution"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "assets/**/*",
+      "../Backend/**/*",
+      "!../Backend/.venv/**/*",
+      "../Client/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../Backend",
+        "to": "backend",
+        "filter": ["**/*", "!.venv/**/*", "!__pycache__/**/*"]
+      },
+      {
+        "from": "../Client/dist",
+        "to": "frontend",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GroveGrab"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.music"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png",
+      "category": "Audio"
+    }
+  },
+  "keywords": [
+    "spotify",
+    "downloader",
+    "music",
+    "playlist"
+  ],
+  "author": "GroveGrab Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "express": "^4.18.2"
+  }
+}

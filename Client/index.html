@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GroveGrab</title>
+    <script>
+      // FORCE clear all theme storage and default to light mode
+      (function() {
+        try {
+          // Clear EVERYTHING theme-related
+          localStorage.clear();
+          // Set light mode as default
+          localStorage.setItem('grovegrab.theme', 'light');
+          // Remove dark class from html
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.colorScheme = 'light';
+        } catch (e) {
+          console.error('Theme init error:', e);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

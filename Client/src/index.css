@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Small niceties */
+html { scroll-behavior: smooth; }

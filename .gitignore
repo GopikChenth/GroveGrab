@@ -1,0 +1,96 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+*.egg-info/
+dist/
+build/
+*.pyc
+.pytest_cache/
+
+# PyInstaller
+*.spec
+build/
+Distribution/
+*.exe
+*.app
+*.dmg
+*.AppImage
+*.pkg
+*.deb
+*.rpm
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+dist-electron/
+*.local
+out/
+.vite/
+Client/dist/
+Client/dist-electron/
+release/
+app/dist/
+Electron/dist/
+
+# Environment variables (keep .env.example)
+.env
+.env.local
+.env.*.local
+Backend/.env
+Client/.env
+!.env.example
+!Backend/.env.example
+!Client/.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+Backend/logs/
+Backend/config.json
+
+# SpotDL cache and downloads
+.spotdl-cache/
+*.mp3
+*.flac
+*.m4a
+*.opus
+*.ogg
+*.wav
+
+# Downloaded music (if stored in project)
+downloads/
+Downloads/
+Backend/downloads/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
