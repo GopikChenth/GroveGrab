@@ -2,10 +2,11 @@ import { useState } from 'react';
 
 export default function ConfigModal({ isOpen, onClose, onSave, currentConfig }) {
   const [config, setConfig] = useState({
-    client_id: currentConfig?.client_id || 'a3f828ab10ba4bfaa63a720b06fdb744',
-    client_secret: currentConfig?.client_secret || '2b3165ca747b4122a074a8b1fc7d2f00',
+    // Defaults intentionally blank — users should provide their own Spotify credentials
+    client_id: currentConfig?.client_id || '',
+    client_secret: currentConfig?.client_secret || '',
     redirect_uri: currentConfig?.redirect_uri || 'http://localhost:8888/callback',
-    download_path: currentConfig?.default_download_path || 'M:\\Songs',
+    download_path: currentConfig?.default_download_path || '',
     audio_format: currentConfig?.audio_format || 'mp3',
     audio_quality: currentConfig?.audio_quality || '320k',
   });

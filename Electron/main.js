@@ -43,10 +43,62 @@ function killPort(port) {
 // Start Flask backend
 async function startBackend() {
   return new Promise(async (resolve, reject) => {
-    const backendPath = path.join(__dirname, '..', 'Backend');
-    // Use system Python or venv Python
-    const venvPython = path.join(backendPath, '.venv', 'Scripts', 'python.exe');
-    const pythonPath = require('fs').existsSync(venvPython) ? venvPython : 'python';
+    // Determine the correct path based on whether we're packaged or in development
+    let backendPath;
+    if (app.isPackaged) {
+      // When packaged, backend is in resources/app/backend
+      backendPath = path.join(process.resourcesPath, 'app', 'backend');
+    } else {
+      // In development, backend is in ../Backend
+      backendPath = path.join(__dirname, '..', 'Backend');
+    }
+    
+    console.log(`Backend directory: ${backendPath}`);
+    
+    // Check Python and install dependencies
+    if (app.isPackaged) {
+      console.log('Checking Python dependencies...');
+      try {
+        // Install requirements
+        const requirementsPath = path.join(backendPath, 'requirements.txt');
+        console.log('Installing dependencies from:', requirementsPath);
+        
+        const installProcess = spawn('python', ['-m', 'pip', 'install', '-r', requirementsPath, '--quiet'], {
+          shell: true,
+          cwd: backendPath
+        });
+        
+        await new Promise((resolveInstall, rejectInstall) => {
+          installProcess.on('close', (code) => {
+            if (code === 0) {
+              console.log('✓ Dependencies installed');
+              resolveInstall();
+            } else {
+              console.error('Failed to install dependencies');
+              // Continue anyway - dependencies might already be installed
+              resolveInstall();
+            }
+          });
+          
+          installProcess.on('error', (err) => {
+            console.error('Error installing dependencies:', err);
+            dialog.showErrorBox(
+              'Python Setup Error',
+              'Failed to install Python dependencies.\n\nPlease install manually:\n1. Open Command Prompt\n2. Run: pip install flask flask-cors spotdl requests'
+            );
+            rejectInstall(err);
+          });
+          
+          // Timeout after 30 seconds
+          setTimeout(() => resolveInstall(), 30000);
+        });
+      } catch (error) {
+        console.error('Error setting up Python:', error);
+      }
+    }
+    
+    // Use system Python (venv won't be packaged)
+    const pythonPath = 'python';
     const appPath = path.join(backendPath, 'app.py');
 
     // Check if port is available
@@ -58,10 +110,11 @@ async function startBackend() {
     }
 
     console.log('Starting backend server...');
+    console.log(`Running: python ${appPath}`);
     
     backendProcess = spawn(pythonPath, [appPath], {
       cwd: backendPath,
-      env: { ...process.env, FLASK_ENV: 'production' }
+      env: { ...process.env, FLASK_ENV: 'production', PYTHONUNBUFFERED: '1' }
     });
 
     backendProcess.stdout.on('data', (data) => {
@@ -88,7 +141,17 @@ async function startBackend() {
 // Start frontend static server
 async function startFrontend() {
   return new Promise(async (resolve) => {
-    const frontendDist = path.join(__dirname, '..', 'Client', 'dist');
+    // Determine the correct path based on whether we're packaged or in development
+    let frontendDist;
+    if (app.isPackaged) {
+      // When packaged, frontend is in resources/app/frontend
+      frontendDist = path.join(process.resourcesPath, 'app', 'frontend');
+    } else {
+      // In development, frontend is in ../Client/dist
+      frontendDist = path.join(__dirname, '..', 'Client', 'dist');
+    }
+    
+    console.log(`Frontend directory: ${frontendDist}`);
     
     frontendServer = express();
     frontendServer.use(express.static(frontendDist));

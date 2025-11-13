@@ -16,49 +16,64 @@
   "build": {
     "appId": "com.grovegrab.app",
     "productName": "GroveGrab",
-    "icon": "assets/icon.png",
     "directories": {
-      "output": "../Distribution"
+      "output": "../Distribution/electron"
     },
     "files": [
       "main.js",
       "preload.js",
-      "assets/**/*",
-      "../Backend/**/*",
-      "!../Backend/.venv/**/*",
-      "../Client/dist/**/*"
+      "package.json",
+      "node_modules/**/*"
     ],
     "extraResources": [
       {
         "from": "../Backend",
-        "to": "backend",
-        "filter": ["**/*", "!.venv/**/*", "!__pycache__/**/*"]
+        "to": "app/backend",
+        "filter": [
+          "**/*",
+          "!.venv/**/*",
+          "!__pycache__/**/*",
+          "!*.pyc",
+          "!.env"
+        ]
       },
       {
         "from": "../Client/dist",
-        "to": "frontend",
-        "filter": ["**/*"]
+        "to": "app/frontend"
       }
     ],
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "GroveGrab"
+      "shortcutName": "GroveGrab",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    },
+    "portable": {
+      "artifactName": "GroveGrab-Portable.exe"
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/icon.icns",
       "category": "public.app-category.music"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/icon.png",
       "category": "Audio"
     }
   },

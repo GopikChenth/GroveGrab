@@ -46,13 +46,22 @@ This will:
 
 ### Step 2: Configure Spotify Credentials
 
-Edit `Backend\.env` and add your Spotify API credentials:
+**IMPORTANT**: Copy `Backend\.env.template` to `Backend\.env` and add your real Spotify API credentials:
+
+```powershell
+# Copy the template
+Copy-Item Backend\.env.template Backend\.env
+```
+
+Then edit `Backend\.env` with your credentials:
 
 ```env
-SPOTIFY_CLIENT_ID=your_client_id_here
-SPOTIFY_CLIENT_SECRET=your_client_secret_here
+SPOTIFY_CLIENT_ID=your_actual_client_id_here
+SPOTIFY_CLIENT_SECRET=your_actual_client_secret_here
 SPOTIFY_REDIRECT_URI=http://localhost:8888/callback
 ```
+
+**⚠️ NEVER commit the `.env` file to version control!** It contains sensitive credentials.
 
 ### Step 3: Setup Frontend
 
@@ -225,10 +234,20 @@ choco install ffmpeg
 
 ## 🔐 Security Notes
 
-- ⚠️ **Never commit your `.env` files** - They contain sensitive credentials
-- ⚠️ **Keep your Spotify credentials private**
-- ⚠️ **Don't share your API keys publicly**
+- ⚠️ **NEVER commit your `.env` files** - They contain sensitive Spotify API credentials
+- ⚠️ **Keep your Spotify credentials private** - Treat them like passwords
+- ⚠️ **Don't share your API keys publicly** - Rotate them immediately if exposed
+- ⚠️ **Use `.env.template` for reference** - This file is safe to commit and shows the required format
 - The application stores credentials locally only
+- Always copy `.env.template` to `.env` and never commit `.env` to git
+
+### Setting Up Credentials Securely
+
+1. Get credentials from [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Copy `Backend\.env.template` to `Backend\.env`
+3. Paste your real credentials in `Backend\.env`
+4. Verify `.env` is in `.gitignore` (it should be!)
+5. NEVER commit or share your `.env` file
 
 ## 📦 Desktop App Packaging (Coming Soon)
 

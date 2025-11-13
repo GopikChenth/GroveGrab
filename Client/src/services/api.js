@@ -20,6 +20,12 @@ class ApiService {
         ...options,
       });
 
+      // Check if response is actually JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Backend server is not responding correctly. Make sure the server is running on http://localhost:5000');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -29,6 +35,12 @@ class ApiService {
       return data;
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);
+      
+      // Provide more helpful error messages
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Cannot connect to backend server. Please make sure the Flask server is running on port 5000.');
+      }
+      
       throw error;
     }
   }

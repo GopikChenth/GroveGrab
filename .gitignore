@@ -48,14 +48,16 @@ release/
 app/dist/
 Electron/dist/
 
-# Environment variables (keep .env.example)
+# Environment variables (keep .env.example and .env.template)
 .env
 .env.local
 .env.*.local
 Backend/.env
 Client/.env
 !.env.example
+!.env.template
 !Backend/.env.example
+!Backend/.env.template
 !Client/.env.example
 
 # IDE
