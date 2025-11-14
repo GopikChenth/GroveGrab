@@ -13,8 +13,41 @@ A complete desktop application for downloading Spotify songs and playlists using
 - ✅ **Modern UI** - Clean, responsive interface with dark mode support
 - ✅ **Detailed Logs** - View detailed logs for each download task
 - ✅ **Queue Management** - Manage multiple downloads simultaneously
+- ✅ **Standalone Executables** - No installation required, fully portable
+- ✅ **Custom Icon** - Beautiful gradient branding
 
-## 📋 Prerequisites
+## 📦 Download & Install
+
+### Option 1: Standalone Executable (Recommended)
+**No Python or dependencies required!**
+
+1. Download `GroveGrab.exe` from the [Releases](https://github.com/GopikChenth/GroveGrab/releases) page
+2. Run the executable
+3. Configure your Spotify API credentials in the settings
+4. Start downloading!
+
+**Size**: ~39 MB | **Requirements**: Windows 10/11
+
+### Option 2: Electron Installer
+**For those who prefer traditional installation**
+
+1. Download `GroveGrab Setup 1.0.0.exe` from [Releases](https://github.com/GopikChenth/GroveGrab/releases)
+2. Run the installer
+3. Follow the installation wizard
+4. Launch from Start Menu or Desktop
+
+**Size**: ~111 MB | **Requirements**: Windows 10/11
+
+### Option 3: Electron Portable
+**Run from anywhere without installation**
+
+1. Download `GroveGrab-Portable.exe` from [Releases](https://github.com/GopikChenth/GroveGrab/releases)
+2. Run directly from USB drive or any folder
+3. No installation needed
+
+**Size**: ~111 MB | **Requirements**: Windows 10/11
+
+## 📋 Development Prerequisites
 
 Before you begin, ensure you have:
 
@@ -29,7 +62,38 @@ Before you begin, ensure you have:
    - Copy your Client ID and Client Secret
    - Add `http://localhost:8888/callback` to Redirect URIs
 
-## 🚀 Quick Start
+## 🚀 Quick Start (For Users)
+
+### Using the Standalone Executable
+
+1. **Download** `GroveGrab.exe` from releases
+2. **Run** the executable
+3. **Configure** Spotify API credentials:
+   - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+   - Create an app and get your Client ID and Secret
+   - Add `http://localhost:8888/callback` to Redirect URIs
+   - Click the settings icon (⚙️) in GroveGrab
+   - Enter your credentials
+4. **Download** your music!
+
+### Get Spotify API Credentials
+
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account
+3. Click "Create app"
+4. Fill in:
+   - **App name**: GroveGrab (or any name)
+   - **App description**: Personal music downloader
+   - **Redirect URI**: `http://localhost:8888/callback`
+5. Click "Save"
+6. Copy your **Client ID** and **Client Secret**
+7. Paste them in GroveGrab settings
+
+## 🔧 Development Setup
+
+### For Developers Only
+
+If you want to modify or build the application yourself:
 
 ### Step 1: Setup Backend
 
