@@ -1,359 +1,180 @@
-# 🎵 GroveGrab - Spotify Downloader
+# 🎵 GroveGrab
 
-A complete desktop application for downloading Spotify songs and playlists using SpotDL with your own Spotify API credentials.
+<div align="center">
 
-## ✨ Features
+![GroveGrab Banner](https://img.shields.io/badge/GroveGrab-v1.0.0-8A2BE2?style=for-the-badge&logo=spotify&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-18.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Electron](https://img.shields.io/badge/Electron-Desktop-47A248?style=for-the-badge&logo=electron&logoColor=white)
 
-- ✅ **Your Own API Credentials** - Use your Spotify Client ID and Secret to avoid rate limits
-- ✅ **Download Everything** - Supports tracks, playlists, albums, and artists
-- ✅ **High Quality Audio** - Download in MP3 (up to 320kbps), FLAC, OGG, OPUS, or M4A
-- ✅ **Progress Tracking** - Real-time progress bars and download status
-- ✅ **Retry Failed Tracks** - Automatically retry failed downloads
-- ✅ **Metadata Preloading** - Preview track information before downloading
-- ✅ **Modern UI** - Clean, responsive interface with dark mode support
-- ✅ **Detailed Logs** - View detailed logs for each download task
-- ✅ **Queue Management** - Manage multiple downloads simultaneously
-- ✅ **Standalone Executables** - No installation required, fully portable
-- ✅ **Custom Icon** - Beautiful gradient branding
+**A powerful, modern desktop application for downloading Spotify tracks, playlists, albums, and artists in high-quality audio.**
 
-## 📦 Download & Install
-
-### Option 1: Standalone Executable (Recommended)
-**No Python or dependencies required!**
-
-1. Download `GroveGrab.exe` from the [Releases](https://github.com/GopikChenth/GroveGrab/releases) page
-2. Run the executable
-3. Configure your Spotify API credentials in the settings
-4. Start downloading!
-
-**Size**: ~39 MB | **Requirements**: Windows 10/11
-
-### Option 2: Electron Installer
-**For those who prefer traditional installation**
-
-1. Download `GroveGrab Setup 1.0.0.exe` from [Releases](https://github.com/GopikChenth/GroveGrab/releases)
-2. Run the installer
-3. Follow the installation wizard
-4. Launch from Start Menu or Desktop
-
-**Size**: ~111 MB | **Requirements**: Windows 10/11
-
-### Option 3: Electron Portable
-**Run from anywhere without installation**
-
-1. Download `GroveGrab-Portable.exe` from [Releases](https://github.com/GopikChenth/GroveGrab/releases)
-2. Run directly from USB drive or any folder
-3. No installation needed
-
-**Size**: ~111 MB | **Requirements**: Windows 10/11
-
-## 📋 Development Prerequisites
-
-Before you begin, ensure you have:
-
-1. **Python 3.8+** - [Download Python](https://www.python.org/downloads/)
-2. **Node.js 16+** - [Download Node.js](https://nodejs.org/)
-3. **FFmpeg** - Required by SpotDL
-   - Windows (Chocolatey): `choco install ffmpeg`
-   - Or download from [FFmpeg.org](https://ffmpeg.org/download.html)
-4. **Spotify API Credentials**
-   - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-   - Create an app (or use existing)
-   - Copy your Client ID and Client Secret
-   - Add `http://localhost:8888/callback` to Redirect URIs
-
-## 🚀 Quick Start (For Users)
-
-### Using the Standalone Executable
-
-1. **Download** `GroveGrab.exe` from releases
-2. **Run** the executable
-3. **Configure** Spotify API credentials:
-   - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-   - Create an app and get your Client ID and Secret
-   - Add `http://localhost:8888/callback` to Redirect URIs
-   - Click the settings icon (⚙️) in GroveGrab
-   - Enter your credentials
-4. **Download** your music!
-
-### Get Spotify API Credentials
-
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Log in with your Spotify account
-3. Click "Create app"
-4. Fill in:
-   - **App name**: GroveGrab (or any name)
-   - **App description**: Personal music downloader
-   - **Redirect URI**: `http://localhost:8888/callback`
-5. Click "Save"
-6. Copy your **Client ID** and **Client Secret**
-7. Paste them in GroveGrab settings
-
-## 🔧 Development Setup
-
-### For Developers Only
-
-If you want to modify or build the application yourself:
-
-### Step 1: Setup Backend
-
-```powershell
-# Run the backend setup script
-.\setup-backend.ps1
-```
-
-This will:
-- Install Python dependencies
-- Create a virtual environment (optional)
-- Set up configuration files
-- Check for FFmpeg
-
-### Step 2: Configure Spotify Credentials
-
-**IMPORTANT**: Copy `Backend\.env.template` to `Backend\.env` and add your real Spotify API credentials:
-
-```powershell
-# Copy the template
-Copy-Item Backend\.env.template Backend\.env
-```
-
-Then edit `Backend\.env` with your credentials:
-
-```env
-SPOTIFY_CLIENT_ID=your_actual_client_id_here
-SPOTIFY_CLIENT_SECRET=your_actual_client_secret_here
-SPOTIFY_REDIRECT_URI=http://localhost:8888/callback
-```
-
-**⚠️ NEVER commit the `.env` file to version control!** It contains sensitive credentials.
-
-### Step 3: Setup Frontend
-
-```powershell
-# Run the frontend setup script
-.\setup-frontend.ps1
-```
-
-This will:
-- Install npm dependencies
-- Create environment configuration
-
-### Step 4: Start the Application
-
-```powershell
-# Start both backend and frontend servers
-.\start-dev.ps1
-```
-
-Or start them manually:
-
-```powershell
-# Terminal 1 - Backend
-cd Backend
-python app.py
-
-# Terminal 2 - Frontend
-cd Client
-npm run dev
-```
-
-### Step 5: Use the Application
-
-1. Open your browser to `http://localhost:5173`
-2. Click the settings icon (⚙️) to configure your Spotify credentials
-3. Paste a Spotify URL (playlist, album, track, or artist)
-4. Click "Start Download"
-5. Watch the progress in real-time!
-
-## 📦 Project Structure
-
-```
-GroveGrab/
-├── Backend/                 # Python Flask backend
-│   ├── app.py              # Main Flask application
-│   ├── download_manager.py # SpotDL integration & download logic
-│   ├── requirements.txt    # Python dependencies
-│   ├── .env                # Configuration (create from .env.example)
-│   └── README.md           # Backend documentation
-│
-├── Client/                 # React frontend
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   │   ├── ConfigModal.jsx       # Settings modal
-│   │   │   ├── DownloadCard.jsx      # Download input form
-│   │   │   ├── TaskItem.jsx          # Task display component
-│   │   │   ├── LogsModal.jsx         # Logs viewer
-│   │   │   └── Navbar.jsx            # Navigation bar
-│   │   ├── services/
-│   │   │   └── api.js              # API service layer
-│   │   ├── hooks/
-│   │   │   └── useTaskPolling.js   # Task polling hook
-│   │   └── App.jsx                 # Main app component
-│   ├── package.json
-│   └── README.md
-│
-├── setup-backend.ps1       # Backend setup script
-├── setup-frontend.ps1      # Frontend setup script
-├── start-dev.ps1           # Start both servers
-└── README.md               # This file
-```
-
-## 🔧 Configuration Options
-
-### Audio Settings
-
-In the Settings modal, you can configure:
-
-- **Audio Format**: MP3, FLAC, OGG, OPUS, M4A
-- **Audio Quality**: 128kbps, 192kbps, 256kbps, 320kbps (MP3 only)
-- **Download Path**: Default folder for downloads
-
-### Environment Variables
-
-**Backend** (`Backend/.env`):
-```env
-SPOTIFY_CLIENT_ID=your_client_id
-SPOTIFY_CLIENT_SECRET=your_client_secret
-SPOTIFY_REDIRECT_URI=http://localhost:8888/callback
-DEFAULT_DOWNLOAD_PATH=Downloads/GroveGrab
-AUDIO_FORMAT=mp3
-AUDIO_QUALITY=320k
-```
-
-**Frontend** (`Client/.env`):
-```env
-VITE_API_URL=http://localhost:5000
-```
-
-## 🎯 Usage Examples
-
-### Download a Single Track
-```
-https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp
-```
-
-### Download a Playlist
-```
-https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
-```
-
-### Download an Album
-```
-https://open.spotify.com/album/4aawyAB9vmqN3uQ7FjRGTy
-```
-
-### Download Artist's Top Tracks
-```
-https://open.spotify.com/artist/3TVXtAsR1Inumwj472S9r4
-```
-
-## 🐛 Troubleshooting
-
-### Backend won't start
-- Check if Python is installed: `python --version`
-- Install dependencies: `pip install -r Backend/requirements.txt`
-- Check if port 5000 is available
-
-### FFmpeg not found
-```powershell
-# Windows (with Chocolatey)
-choco install ffmpeg
-
-# Or download manually from https://ffmpeg.org/download.html
-```
-
-### SpotDL errors
-- Verify your Spotify credentials are correct
-- Check internet connection
-- Make sure FFmpeg is installed and in PATH
-- Try updating SpotDL: `pip install --upgrade spotdl`
-
-### Downloads fail or are slow
-- Check your internet connection
-- Verify Spotify credentials
-- Some tracks may not be available on YouTube (SpotDL's source)
-- Try downloading individual tracks first
-
-### Frontend can't connect to backend
-- Make sure backend is running on port 5000
-- Check `Client/.env` has correct API URL
-- Check firewall/antivirus settings
-
-## 📝 API Endpoints
-
-### Configuration
-- `GET /api/config` - Get current configuration
-- `POST /api/config` - Update configuration
-
-### Downloads
-- `POST /api/validate-url` - Validate Spotify URL
-- `POST /api/preload` - Preload metadata
-- `POST /api/download` - Start download
-- `GET /api/tasks` - Get all tasks
-- `GET /api/tasks/:id` - Get task status
-- `POST /api/tasks/:id/retry` - Retry failed tracks
-- `POST /api/tasks/:id/cancel` - Cancel task
-- `DELETE /api/tasks/:id` - Delete task
-- `GET /api/logs/:id` - Get task logs
-
-## 🔐 Security Notes
-
-- ⚠️ **NEVER commit your `.env` files** - They contain sensitive Spotify API credentials
-- ⚠️ **Keep your Spotify credentials private** - Treat them like passwords
-- ⚠️ **Don't share your API keys publicly** - Rotate them immediately if exposed
-- ⚠️ **Use `.env.template` for reference** - This file is safe to commit and shows the required format
-- The application stores credentials locally only
-- Always copy `.env.template` to `.env` and never commit `.env` to git
-
-### Setting Up Credentials Securely
-
-1. Get credentials from [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Copy `Backend\.env.template` to `Backend\.env`
-3. Paste your real credentials in `Backend\.env`
-4. Verify `.env` is in `.gitignore` (it should be!)
-5. NEVER commit or share your `.env` file
-
-## 📦 Desktop App Packaging (Coming Soon)
-
-To create a standalone desktop application:
-
-```powershell
-# Install Electron Builder
-cd Client
-npm install --save-dev electron electron-builder
-
-# Build the app
-npm run electron:build
-```
-
-## 🤝 Contributing
-
-This is a personal project, but suggestions and improvements are welcome!
-
-## ⚖️ Legal Notice
-
-This tool is for personal use only. Make sure you comply with:
-- Spotify's Terms of Service
-- YouTube's Terms of Service (SpotDL uses YouTube as audio source)
-- Copyright laws in your jurisdiction
-
-## 🙏 Credits
-
-- **SpotDL** - [https://github.com/spotDL/spotify-downloader](https://github.com/spotDL/spotify-downloader)
-- **Flask** - Backend framework
-- **React** - Frontend framework
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-
-## 📄 License
-
-MIT License - Feel free to use for personal projects
+[Features](#-key-features) • [Installation](#-download--installation) • [Getting Spotify Credentials](#-getting-spotify-api-credentials) • [Developer Setup](#-developer-setup) • [Architecture](#-architecture)
 
 ---
 
-**Made with ❤️ for music lovers**
+</div>
 
-If you enjoy this project, consider:
-- ⭐ Starring this repository
-- 🎵 Supporting the artists whose music you download
-- 🔗 Checking out SpotDL and supporting their development
+## ✨ Key Features
+
+- 🔑 **Custom API Credentials** — Use your own Spotify Client ID & Secret to bypass rate limits and restrictions.
+- 🎧 **High Quality Audio Output** — Download in **MP3 (up to 320kbps)**, **FLAC**, **OGG**, **OPUS**, or **M4A**.
+- 🎶 **Full Spotify URL Support** — Works seamlessly with tracks, playlists, albums, and artist top tracks.
+- ⚡ **Real-Time Progress & Logs** — Live track progress indicators, queue management, and detailed task execution logs.
+- 🔄 **Smart Retry & Skip** — Skips already-downloaded tracks automatically (`--overwrite skip`) and retries failed downloads.
+- 🎨 **Modern Dark-Mode UI** — Built with React + Tailwind CSS for a fast, responsive user interface.
+- 📦 **Portable Standalone Build** — Available as an installer or zero-install portable executable.
+
+---
+
+## ⚡ Quick Architecture Overview
+
+```
+ ┌─────────────────────────────────────────────────────────────┐
+ │                      GroveGrab Desktop                      │
+ ├──────────────────────────────┬──────────────────────────────┤
+ │   Frontend (React + Vite)    │    Backend (Python + Flask)  │
+ │   • Tailwind CSS UI          │    • REST API Endpoints      │
+ │   • Real-Time Task Polling   │    • SpotDL Engine           │
+ │   • Queue & Settings Modal   │    • Process Queue Manager   │
+ └──────────────┬───────────────┴──────────────┬───────────────┘
+                │                              │
+                ▼                              ▼
+      Electron Native Window           FFmpeg / YouTube API
+```
+
+---
+
+## 📦 Download & Installation
+
+### Option 1: Standalone Executable (Recommended)
+> **No Python, Node.js, or setup required!**
+
+1. Download **`GroveGrab.exe`** from the [GitHub Releases](https://github.com/GopikChenth/GroveGrab/releases) page.
+2. Run `GroveGrab.exe`.
+3. Open Settings (⚙️) and input your [Spotify API Credentials](#-getting-spotify-api-credentials).
+4. Paste any Spotify link and click **Start Download**!
+
+---
+
+## 🔑 Getting Spotify API Credentials
+
+To ensure fast and unrestricted downloading, GroveGrab uses official Spotify Client API tokens:
+
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Log in with your Spotify account and click **Create App**.
+3. Fill in the app details:
+   - **App Name**: `GroveGrab`
+   - **App Description**: `Personal music downloader`
+   - **Redirect URI**: `http://localhost:8888/callback`
+4. Save the app and copy your **Client ID** and **Client Secret**.
+5. Click the Settings icon (⚙️) in GroveGrab and paste your credentials.
+
+---
+
+## 🛠️ Developer Setup
+
+### Prerequisites
+- **Python 3.8+**
+- **Node.js 16+**
+- **FFmpeg** (Required by `spotdl` for audio conversion)
+  - Windows: `choco install ffmpeg` or download from [ffmpeg.org](https://ffmpeg.org/)
+  - Linux: `sudo apt install ffmpeg`
+  - macOS: `brew install ffmpeg`
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/GopikChenth/GroveGrab.git
+cd GroveGrab
+```
+
+### 2. Setup Backend (Flask)
+```powershell
+# Using PowerShell setup script
+.\setup-backend.ps1
+
+# Or manually:
+cd Backend
+pip install -r requirements.txt
+python app.py
+```
+
+### 3. Setup Frontend (React + Vite)
+```powershell
+# Using PowerShell setup script
+.\setup-frontend.ps1
+
+# Or manually:
+cd Client
+npm install
+npm run dev
+```
+
+### 4. Run Desktop App (Electron)
+```bash
+cd Client
+npm run electron:start
+```
+
+---
+
+## 🎛️ Supported Formats & Settings
+
+| Audio Format | Supported Bitrates / Quality | Notes |
+| :--- | :--- | :--- |
+| **MP3** | `128k`, `192k`, `256k`, **`320k`** | Default format; recommended for maximum compatibility |
+| **FLAC** | Lossless | Highest audio fidelity |
+| **OGG** | Variable | Vorbis container format |
+| **OPUS** | Variable | High efficiency audio codec |
+| **M4A** | Variable | AAC container format |
+
+---
+
+## 📡 REST API Reference
+
+The Python backend exposes the following local REST API endpoints on `http://localhost:5000`:
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Check backend server health status |
+| `GET / POST` | `/api/config` | Fetch or update Spotify credentials and default download path |
+| `POST` | `/api/validate-url` | Validate Spotify track/playlist/album URL format |
+| `POST` | `/api/preload` | Preload track metadata before downloading |
+| `POST` | `/api/download` | Trigger a new background download task |
+| `GET` | `/api/tasks` | List all active and completed tasks |
+| `GET` | `/api/tasks/:id` | Get status and progress for a specific task |
+| `POST` | `/api/tasks/:id/cancel` | Cancel an active download task |
+| `POST` | `/api/tasks/:id/retry` | Retry failed tracks in a task |
+| `DELETE` | `/api/tasks/:id` | Remove task entry from queue |
+| `GET` | `/api/logs/:id` | Fetch task execution logs |
+
+---
+
+## 🔒 Security Notice
+
+- ⚠️ **Never commit your `.env` file** — It contains your private Spotify API keys.
+- Keep your **Client Secret** private and do not share it publicly.
+
+---
+
+## ⚖️ Legal Disclaimer
+
+GroveGrab is developed for **educational and personal use only**. Users are responsible for complying with Spotify's and YouTube's Terms of Service and local copyright laws.
+
+---
+
+## 🙏 Credits & Acknowledgments
+
+- **[SpotDL](https://github.com/spotDL/spotify-downloader)** — Core Spotify downloading engine.
+- **[Flask](https://flask.palletsprojects.com/)** — Python web backend.
+- **[React](https://react.dev/) & [Vite](https://vitejs.dev/)** — Modern frontend stack.
+- **[Electron](https://www.electronjs.org/)** — Desktop cross-platform shell.
+
+---
+
+<div align="center">
+
+Made with ❤️ by [GopikChenth](https://github.com/GopikChenth)
+
+</div>
