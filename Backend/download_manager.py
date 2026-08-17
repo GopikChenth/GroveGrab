@@ -418,7 +418,10 @@ class DownloadManager:
         entry = f"[{timestamp}] {message}"
         with self.tasks_lock:
             if task_id in self.tasks:
-                self.tasks[task_id].setdefault('logs', []).append(entry)
+                logs = self.tasks[task_id].setdefault('logs', [])
+                logs.append(entry)
+                if len(logs) > 300:
+                    self.tasks[task_id]['logs'] = logs[-300:]
         logger.info(f"Task {task_id}: {message}")
 
     # ---------------------------- Public API ---------------------------- #
