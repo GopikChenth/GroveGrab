@@ -136,4 +136,7 @@ if FRONTEND_DIR.exists():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
+    # Bind to localhost by default so the unauthenticated config/download API
+    # is not exposed to the network; opt-in via HOST env var if needed.
+    host = os.environ.get('HOST', '127.0.0.1')
+    app.run(host=host, port=port, debug=False, threaded=True)
