@@ -1,12 +1,10 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
-const fs = require('fs');
 
 let mainWindow;
 let backendProcess;
 
-// Backend server process
 function startBackend() {
   const isProd = app.isPackaged;
   const backendDir = isProd
@@ -15,27 +13,22 @@ function startBackend() {
 
   const pythonExecutable = isProd
     ? path.join(process.resourcesPath, 'python', 'python.exe')
-    : 'python';
+    : (process.platform === 'win32' ? 'python' : 'python3');
 
   const backendScript = path.join(backendDir, 'app.py');
-
-  console.log('Starting backend:', pythonExecutable, backendScript);
 
   backendProcess = spawn(pythonExecutable, [backendScript], {
     cwd: backendDir,
     env: { ...process.env, PYTHONUNBUFFERED: '1' }
   });
 
-  backendProcess.stdout.on('data', (data) => {
-    console.log(`Backend: ${data}`);
-  });
-
-  backendProcess.stderr.on('data', (data) => {
-    console.error(`Backend Error: ${data}`);
+  backendProcess.on('error', (err) => {
+    console.error('Failed to start backend process:', err);
+    backendProcess = null;
   });
 
   backendProcess.on('close', (code) => {
-    console.log(`Backend process exited with code ${code}`);
+    backendProcess = null;
   });
 }
 
@@ -43,22 +36,20 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     },
-    icon: path.join(__dirname, '..', 'public', 'vite.svg')
+    icon: path.join(__dirname, '..', 'public', '1.png')
   });
 
-  // Load app
   if (app.isPackaged) {
-    // Production: load built files
     mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   } else {
-    // Development: load from dev server
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
   }
 
   mainWindow.on('closed', () => {
@@ -67,13 +58,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  // Start backend server
   startBackend();
-
-  // Wait for backend to start
-  setTimeout(() => {
-    createWindow();
-  }, 2000);
+  setTimeout(createWindow, 1500);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -94,13 +80,11 @@ app.on('quit', () => {
   }
 });
 
-// IPC handlers for file selection
 ipcMain.handle('select-folder', async () => {
-  const { dialog } = require('electron');
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory']
   });
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     return result.filePaths[0];
   }

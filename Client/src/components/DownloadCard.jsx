@@ -6,9 +6,18 @@ export default function DownloadCard({ onStartDownload, hasCredentials }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const handleBrowse = async () => {
+    if (window?.electron?.selectFolder) {
+      const selected = await window.electron.selectFolder();
+      if (selected) {
+        setDownloadPath(selected);
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!hasCredentials) {
       setError('Please configure your Spotify API credentials first');
       return;
@@ -36,7 +45,7 @@ export default function DownloadCard({ onStartDownload, hasCredentials }) {
   return (
     <div className="bg-white/60 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-2xl">
       <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Download from Spotify</h2>
-      
+
       {!hasCredentials && (
         <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl">
           <p className="text-sm text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2">
@@ -70,14 +79,26 @@ export default function DownloadCard({ onStartDownload, hasCredentials }) {
           <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-200">
             Download Path (Optional)
           </label>
-          <input
-            type="text"
-            value={downloadPath}
-            onChange={(e) => setDownloadPath(e.target.value)}
-            placeholder="Leave empty to use default path"
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all"
-            disabled={loading || !hasCredentials}
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={downloadPath}
+              onChange={(e) => setDownloadPath(e.target.value)}
+              placeholder="Leave empty to use default path"
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all"
+              disabled={loading || !hasCredentials}
+            />
+            {typeof window !== 'undefined' && window?.electron?.selectFolder && (
+              <button
+                type="button"
+                onClick={handleBrowse}
+                disabled={loading || !hasCredentials}
+                className="px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium rounded-xl transition-all"
+              >
+                Browse
+              </button>
+            )}
+          </div>
         </div>
 
         {error && (

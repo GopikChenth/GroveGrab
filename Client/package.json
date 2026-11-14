@@ -34,7 +34,7 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "public/vite.svg"
+      "icon": "public/1.png"
     },
     "nsis": {
       "oneClick": false,

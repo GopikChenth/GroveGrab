@@ -10,8 +10,7 @@ import apiService from './services/api.js'
 
 function App() {
   const { theme, toggle } = useTheme()
-  
-  // State
+
   const [config, setConfig] = useState(null)
   const [tasks, setTasks] = useState([])
   const [showConfigModal, setShowConfigModal] = useState(false)
@@ -21,12 +20,10 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Load config and tasks on mount
   useEffect(() => {
     loadConfig()
     loadTasks()
-    
-    // Poll tasks every 2 seconds
+
     const interval = setInterval(loadTasks, 2000)
     return () => clearInterval(interval)
   }, [])
@@ -35,7 +32,7 @@ function App() {
     try {
       const data = await apiService.getConfig()
       setConfig(data)
-      setError(null) // Clear any previous errors
+      setError(null)
       setLoading(false)
     } catch (err) {
       console.error('Config load error:', err)
@@ -48,12 +45,10 @@ function App() {
     try {
       const data = await apiService.getTasks()
       setTasks(data)
-      // If we successfully loaded tasks and had an error, clear it
       if (error && !loading) {
         setError(null)
       }
     } catch (err) {
-      // Silently fail for polling errors to avoid spam
       console.error('Failed to load tasks:', err)
     }
   }
@@ -64,9 +59,7 @@ function App() {
   }
 
   const handleStartDownload = async (url, downloadPath) => {
-    const result = await apiService.startDownload(url, downloadPath)
-    console.log('Download started:', result)
-    // Immediately refresh tasks
+    await apiService.startDownload(url, downloadPath)
     setTimeout(loadTasks, 500)
   }
 
@@ -76,12 +69,11 @@ function App() {
   }
 
   const handleCancel = async (taskId) => {
-    // Optimistic update: flip status immediately for snappy UI
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'cancelled' } : t))
+    setTasks(prev => prev.map(t => (t.id === taskId ? { ...t, status: 'cancelled' } : t)))
     try {
       await apiService.cancelTask(taskId)
-    } catch (_) {
-      // Re-sync on failure
+    } catch (err) {
+      console.error('Failed to cancel task:', err)
     }
     await loadTasks()
   }
@@ -101,7 +93,6 @@ function App() {
     }
   }
 
-  // Extract songs from all tasks
   const extractSongList = () => {
     const downloadedSongs = []
     const failedSongs = []
@@ -109,69 +100,32 @@ function App() {
     const pendingSongs = []
 
     tasks.forEach(task => {
-      // Track total tracks for pending calculation
       const totalTracks = task.total_tracks || 0
       const completedCount = task.completed_tracks || 0
       const failedCount = task.failed_tracks || 0
 
-      if (task.logs && task.logs.length > 0) {
-        task.logs.forEach(log => {
-          // Parse downloaded songs (pattern: "Downloaded "SongName": URL")
-          const downloadMatch = log.match(/Downloaded "([^"]+)"/)
-          if (downloadMatch) {
-            const songName = downloadMatch[1]
-            if (!downloadedSongs.find(s => s.name === songName)) {
-              downloadedSongs.push({
-                name: songName,
-                status: 'completed',
-                taskId: task.id,
-                url: task.url
-              })
-            }
-          }
-
-          // Parse failed songs (pattern: contains "Error" or "Failed")
-          const errorMatch = log.match(/Error|Failed|AudioProviderError/)
-          if (errorMatch) {
-            // Try to extract song name from error context
-            const songMatch = log.match(/["']([^"']+)["']/)
-            if (songMatch) {
-              const songName = songMatch[1]
-              if (!failedSongs.find(s => s.name === songName) && 
-                  !downloadedSongs.find(s => s.name === songName)) {
-                failedSongs.push({
-                  name: songName,
-                  status: 'failed',
-                  taskId: task.id,
-                  url: task.url
-                })
-              }
-            }
+      if (Array.isArray(task.tracks) && task.tracks.length > 0) {
+        task.tracks.forEach(t => {
+          if (!t.title) return
+          const item = { name: t.title, taskId: task.id, url: task.url }
+          if (t.status === 'completed') {
+            if (!downloadedSongs.find(s => s.name === t.title)) downloadedSongs.push(item)
+          } else if (t.status === 'failed') {
+            if (!failedSongs.find(s => s.name === t.title)) failedSongs.push(item)
+          } else if (t.status === 'downloading') {
+            if (!downloadingSongs.find(s => s.name === t.title)) downloadingSongs.push(item)
           }
         })
       }
 
-      // Parse currently downloading
-      if (task.status === 'running' && task.current_track) {
-        if (!downloadingSongs.find(s => s.name === task.current_track)) {
-          downloadingSongs.push({
-            name: task.current_track,
-            status: 'downloading',
-            taskId: task.id,
-            url: task.url
-          })
-        }
+      if (task.status === 'running' && task.current_track && !downloadingSongs.find(s => s.name === task.current_track)) {
+        downloadingSongs.push({ name: task.current_track, taskId: task.id, url: task.url })
       }
 
-      // Calculate pending songs (not yet downloaded, failed, or downloading)
-      if (totalTracks > 0) {
-        const pendingCount = totalTracks - completedCount - failedCount - (task.current_track ? 1 : 0)
-        if (pendingCount > 0 && task.status === 'running') {
-          pendingSongs.push({
-            taskId: task.id,
-            url: task.url,
-            count: pendingCount
-          })
+      if (totalTracks > 0 && task.status === 'running') {
+        const pendingCount = Math.max(0, totalTracks - completedCount - failedCount - (task.current_track ? 1 : 0))
+        if (pendingCount > 0) {
+          pendingSongs.push({ taskId: task.id, url: task.url, count: pendingCount })
         }
       }
     })
@@ -230,9 +184,8 @@ function App() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
       <Navbar theme={theme} onToggleTheme={toggle} onOpenConfig={() => setShowConfigModal(true)} />
-      
+
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
-        {/* Header Section */}
         <div className="mb-8 sm:mb-10 text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-3 bg-gradient-to-r from-teal-500 via-purple-600 to-orange-500 bg-clip-text text-transparent">
             GroveGrab
@@ -242,7 +195,6 @@ function App() {
           </p>
         </div>
 
-        {/* Configuration Warning */}
         {!config?.has_credentials && (
           <div className="mb-8 max-w-3xl mx-auto">
             <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-6 backdrop-blur-sm">
@@ -271,7 +223,6 @@ function App() {
           </div>
         )}
 
-        {/* Download Card */}
         <div className="mb-10 max-w-3xl mx-auto">
           <DownloadCard
             onStartDownload={handleStartDownload}
@@ -279,7 +230,6 @@ function App() {
           />
         </div>
 
-        {/* Tasks Section */}
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
@@ -333,7 +283,6 @@ function App() {
         </div>
       </main>
 
-      {/* Modals */}
       <ConfigModal
         isOpen={showConfigModal}
         onClose={() => setShowConfigModal(false)}
@@ -351,7 +300,6 @@ function App() {
         taskId={selectedTaskLogs?.taskId}
       />
 
-      {/* Song List Modal */}
       {showSongListModal && (() => {
         const { downloadedSongs, failedSongs, downloadingSongs, pendingSongs } = extractSongList()
         const totalPending = pendingSongs.reduce((sum, p) => sum + p.count, 0)
@@ -360,7 +308,6 @@ function App() {
         return (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
             <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 max-w-3xl w-full max-h-[85vh] flex flex-col">
-              {/* Header */}
               <div className="px-6 py-6 border-b border-gray-700 bg-purple-600/10">
                 <div className="flex items-center justify-between">
                   <div>
@@ -407,7 +354,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Content */}
               <div className="flex-1 overflow-y-auto p-6">
                 {totalSongs === 0 ? (
                   <div className="text-center py-16">
@@ -421,7 +367,6 @@ function App() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {/* Downloaded Songs */}
                     {downloadedSongs.length > 0 && (
                       <div>
                         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -456,7 +401,6 @@ function App() {
                       </div>
                     )}
 
-                    {/* Downloading Songs */}
                     {downloadingSongs.length > 0 && (
                       <div>
                         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -492,7 +436,6 @@ function App() {
                       </div>
                     )}
 
-                    {/* Pending Songs */}
                     {totalPending > 0 && (
                       <div>
                         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -526,7 +469,6 @@ function App() {
                       </div>
                     )}
 
-                    {/* Failed Songs */}
                     {failedSongs.length > 0 && (
                       <div>
                         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -565,7 +507,6 @@ function App() {
                 )}
               </div>
 
-              {/* Footer */}
               <div className="px-6 py-4 border-t border-gray-700 bg-gray-800/50">
                 <button
                   onClick={() => setShowSongListModal(false)}

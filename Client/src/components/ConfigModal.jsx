@@ -1,20 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ConfigModal({ isOpen, onClose, onSave, currentConfig }) {
   const [config, setConfig] = useState({
-    // Defaults intentionally blank — users should provide their own Spotify credentials
-    client_id: currentConfig?.client_id || '',
-    client_secret: currentConfig?.client_secret || '',
-    redirect_uri: currentConfig?.redirect_uri || 'http://localhost:8888/callback',
-    download_path: currentConfig?.default_download_path || '',
-    audio_format: currentConfig?.audio_format || 'mp3',
-    audio_quality: currentConfig?.audio_quality || '320k',
+    client_id: '',
+    client_secret: '',
+    redirect_uri: 'http://localhost:8888/callback',
+    download_path: '',
+    audio_format: 'mp3',
+    audio_quality: '320k',
   });
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      setConfig({
+        client_id: currentConfig?.client_id || '',
+        client_secret: '',
+        redirect_uri: currentConfig?.redirect_uri || 'http://localhost:8888/callback',
+        download_path: currentConfig?.default_download_path || '',
+        audio_format: currentConfig?.audio_format || 'mp3',
+        audio_quality: currentConfig?.audio_quality || '320k',
+      });
+      setError(null);
+    }
+  }, [isOpen, currentConfig]);
+
   if (!isOpen) return null;
+
+  const handleBrowse = async () => {
+    if (window?.electron?.selectFolder) {
+      const selected = await window.electron.selectFolder();
+      if (selected) {
+        setConfig((prev) => ({ ...prev, download_path: selected }));
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,7 +82,6 @@ export default function ConfigModal({ isOpen, onClose, onSave, currentConfig }) 
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Spotify Credentials */}
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
@@ -98,15 +119,15 @@ export default function ConfigModal({ isOpen, onClose, onSave, currentConfig }) 
 
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-200">
-                Client Secret *
+                Client Secret {currentConfig?.has_credentials ? '(Optional if already saved)' : '*'}
               </label>
               <input
                 type="password"
                 value={config.client_secret}
                 onChange={(e) => setConfig({ ...config, client_secret: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                placeholder="Enter your Spotify Client Secret"
-                required
+                placeholder={currentConfig?.has_credentials ? '•••••••••••••••• (Leave blank to keep current)' : 'Enter your Spotify Client Secret'}
+                required={!currentConfig?.has_credentials}
               />
             </div>
 
@@ -130,7 +151,6 @@ export default function ConfigModal({ isOpen, onClose, onSave, currentConfig }) 
             </div>
           </div>
 
-          {/* Download Settings */}
           <div className="space-y-4 pt-6 border-t border-gray-700">
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -143,13 +163,24 @@ export default function ConfigModal({ isOpen, onClose, onSave, currentConfig }) 
               <label className="block text-sm font-semibold mb-2 text-gray-200">
                 Default Download Path
               </label>
-              <input
-                type="text"
-                value={config.download_path}
-                onChange={(e) => setConfig({ ...config, download_path: e.target.value })}
-                placeholder="e.g., C:\Users\YourName\Music\GroveGrab"
-                className="w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={config.download_path}
+                  onChange={(e) => setConfig({ ...config, download_path: e.target.value })}
+                  placeholder="e.g., /home/user/Music or C:\Users\Name\Music\GroveGrab"
+                  className="flex-1 px-4 py-3 border border-gray-600 rounded-xl bg-gray-900/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+                {typeof window !== 'undefined' && window?.electron?.selectFolder && (
+                  <button
+                    type="button"
+                    onClick={handleBrowse}
+                    className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium rounded-xl transition-all"
+                  >
+                    Browse
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -201,7 +232,6 @@ export default function ConfigModal({ isOpen, onClose, onSave, currentConfig }) 
           )}
         </form>
 
-        {/* Actions */}
         <div className="p-6 border-t border-gray-700 bg-gray-800/50">
           <div className="flex gap-3">
             <button

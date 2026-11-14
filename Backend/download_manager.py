@@ -1,45 +1,48 @@
-"""
-Download Manager - Handles SpotDL integration and download queue management
-"""
 from __future__ import annotations
 
 import json
 import logging
 import re
 import subprocess
-import socket
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
 from typing import List, Optional
 
-
 logger = logging.getLogger(__name__)
-
-
-def check_internet_connection():
-    """Check if internet connection is available"""
-    try:
-        # Try to connect to Google's DNS
-        socket.create_connection(("8.8.8.8", 53), timeout=3)
-        return True
-    except OSError:
-        return False
 
 
 class DownloadManager:
     def __init__(self):
-        self.tasks = {}  # task_id -> task_data (JSON-serializable)
+        self.tasks = {}
         self.tasks_lock = Lock()
-        self.processes = {}  # task_id -> subprocess.Popen
+        self.processes = {}
 
-        self.config_file = Path('config.json')
-        self.logs_dir = Path('logs')
+        data_dir = Path.home() / '.grovegrab'
+        try:
+            data_dir.mkdir(parents=True, exist_ok=True)
+            test_file = data_dir / '.write_test'
+            test_file.touch()
+            test_file.unlink()
+            self.data_dir = data_dir
+        except OSError:
+            self.data_dir = Path(__file__).resolve().parent
+
+        self.config_file = self.data_dir / 'config.json'
+        self.logs_dir = self.data_dir / 'logs'
         self.logs_dir.mkdir(exist_ok=True)
 
+        self._migrate_legacy_config()
         self.config = self._load_config()
 
-    # ---------------------------- Config ---------------------------- #
+    def _migrate_legacy_config(self):
+        legacy_file = Path(__file__).parent / 'config.json'
+        if legacy_file.exists() and not self.config_file.exists():
+            try:
+                self.config_file.write_text(legacy_file.read_text(encoding='utf-8'), encoding='utf-8')
+            except Exception as e:
+                logger.error(f"Failed to migrate config: {e}")
+
     def _load_config(self) -> dict:
         if self.config_file.exists():
             try:
@@ -80,14 +83,14 @@ class DownloadManager:
         audio_quality: str | None = None,
     ) -> bool:
         try:
-            if client_id is not None:
-                self.config['client_id'] = client_id
-            if client_secret is not None:
-                self.config['client_secret'] = client_secret
-            if redirect_uri is not None:
-                self.config['redirect_uri'] = redirect_uri
+            if client_id is not None and client_id.strip():
+                self.config['client_id'] = client_id.strip()
+            if client_secret is not None and client_secret.strip():
+                self.config['client_secret'] = client_secret.strip()
+            if redirect_uri is not None and redirect_uri.strip():
+                self.config['redirect_uri'] = redirect_uri.strip()
             if download_path is not None:
-                self.config['default_download_path'] = download_path
+                self.config['default_download_path'] = download_path.strip()
             if audio_format is not None:
                 self.config['audio_format'] = audio_format
             if audio_quality is not None:
@@ -103,91 +106,7 @@ class DownloadManager:
             logger.error(f"Failed to update config: {e}")
             return False
 
-    # ---------------------------- Validation ---------------------------- #
-    def validate_url(self, url: str) -> dict:
-        patterns = {
-            'track': r'spotify\.com/track/([a-zA-Z0-9]+)',
-            'playlist': r'spotify\.com/playlist/([a-zA-Z0-9]+)',
-            'album': r'spotify\.com/album/([a-zA-Z0-9]+)',
-            'artist': r'spotify\.com/artist/([a-zA-Z0-9]+)',
-        }
-        for url_type, pattern in patterns.items():
-            m = re.search(pattern, url)
-            if m:
-                return {'valid': True, 'type': url_type, 'id': m.group(1), 'url': url}
-        return {
-            'valid': False,
-            'error': 'Invalid Spotify URL. Please provide a valid track, playlist, album, or artist URL.',
-        }
-
-    # ---------------------------- Tasks ---------------------------- #
-    def preload_metadata(self, task_id: str, url: str):
-        with self.tasks_lock:
-            self.tasks[task_id] = {
-                'id': task_id,
-                'url': url,
-                'type': 'preload',
-                'status': 'running',
-                'progress': 0,
-                'total_tracks': 0,
-                'completed_tracks': 0,
-                'failed_tracks': 0,
-                'current_track': '',
-                'logs': [],
-                'tracks': [],
-                'created_at': datetime.now().isoformat(),
-                'updated_at': datetime.now().isoformat(),
-            }
-
-        try:
-            self._log(task_id, f"Starting metadata preload for: {url}")
-            cmd = self._build_spotdl_command(url, preload_only=True)
-            result = self._execute_spotdl(task_id, cmd)
-
-            with self.tasks_lock:
-                if result['success']:
-                    self.tasks[task_id]['status'] = 'completed'
-                    self.tasks[task_id]['progress'] = 100
-                else:
-                    self.tasks[task_id]['status'] = 'failed'
-                self.tasks[task_id]['updated_at'] = datetime.now().isoformat()
-
-            self._log(
-                task_id,
-                'Metadata preload completed' if result['success'] else f"Preload failed: {result.get('error', 'Unknown error')}",
-            )
-        except Exception as e:
-            logger.error(f"Preload error for task {task_id}: {e}")
-            with self.tasks_lock:
-                self.tasks[task_id]['status'] = 'failed'
-                self.tasks[task_id]['updated_at'] = datetime.now().isoformat()
-            self._log(task_id, f"Error: {str(e)}")
-
     def start_download(self, task_id: str, url: str, download_path: str | None = None):
-        # Check internet connection first
-        if not check_internet_connection():
-            with self.tasks_lock:
-                self.tasks[task_id] = {
-                    'id': task_id,
-                    'url': url,
-                    'type': 'download',
-                    'status': 'failed',
-                    'progress': 0,
-                    'total_tracks': 0,
-                    'completed_tracks': 0,
-                    'failed_tracks': 0,
-                    'current_track': '',
-                    'tracks': [],
-                    'download_path': download_path or self.config.get('default_download_path'),
-                    'logs': ['❌ No internet connection detected. Please check your network and try again.'],
-                    'failed_track_list': [],
-                    'created_at': datetime.now().isoformat(),
-                    'updated_at': datetime.now().isoformat(),
-                    'cancelled': False,
-                }
-            logger.error(f"Task {task_id}: No internet connection")
-            return
-
         if not download_path:
             download_path = self.config.get('default_download_path')
         Path(download_path).mkdir(parents=True, exist_ok=True)
@@ -203,7 +122,7 @@ class DownloadManager:
                 'completed_tracks': 0,
                 'failed_tracks': 0,
                 'current_track': '',
-                'tracks': [],  # [{ title, status, progress }]
+                'tracks': [],
                 'download_path': download_path,
                 'logs': [],
                 'failed_track_list': [],
@@ -219,7 +138,6 @@ class DownloadManager:
             cmd = self._build_spotdl_command(url, download_path=download_path)
             result = self._execute_spotdl(task_id, cmd)
 
-            # Decide final status without logging under the lock
             with self.tasks_lock:
                 if self.tasks[task_id].get('cancelled'):
                     self.tasks[task_id]['status'] = 'cancelled'
@@ -241,37 +159,28 @@ class DownloadManager:
                 self.tasks[task_id]['updated_at'] = datetime.now().isoformat()
             self._log(task_id, f"Error: {str(e)}")
 
-    # ---------------------------- SpotDL ---------------------------- #
-    def _build_spotdl_command(
-        self, url: str, download_path: str | None = None, preload_only: bool = False
-    ) -> List[str]:
-        cmd = ['spotdl']
-        cmd.append(url)
+    def _build_spotdl_command(self, url: str, download_path: str | None = None) -> List[str]:
+        cmd = ['spotdl', url]
 
         if self.config.get('client_id') and self.config.get('client_secret'):
             cmd.extend(['--client-id', self.config['client_id'], '--client-secret', self.config['client_secret']])
 
-        if preload_only:
-            cmd.append('--preload')
-        else:
-            if download_path:
-                cmd.extend(['--output', download_path])
+        if download_path:
+            cmd.extend(['--output', download_path])
 
-            audio_format = self.config.get('audio_format', 'mp3')
-            cmd.extend(['--format', audio_format])
+        audio_format = self.config.get('audio_format', 'mp3')
+        cmd.extend(['--format', audio_format])
 
-            if audio_format == 'mp3':
-                quality = self.config.get('audio_quality', '320k')
-                cmd.extend(['--bitrate', quality])
+        if audio_format == 'mp3':
+            quality = self.config.get('audio_quality', '320k')
+            cmd.extend(['--bitrate', quality])
 
-            # Skip already-downloaded songs if files exist
-            cmd.extend(['--overwrite', 'skip'])
-
+        cmd.extend(['--overwrite', 'skip'])
         return cmd
 
     def _execute_spotdl(self, task_id: str, cmd: List[str]) -> dict:
         try:
-            self._log(task_id, f"Executing: {' '.join(cmd[:2])}...")  # Avoid logging credentials
+            self._log(task_id, f"Executing: {' '.join(cmd[:2])}...")
 
             process = subprocess.Popen(
                 cmd,
@@ -284,7 +193,6 @@ class DownloadManager:
             with self.tasks_lock:
                 self.processes[task_id] = process
 
-            dns_error_count = 0
             for line in iter(process.stdout.readline, ''):
                 if not line:
                     break
@@ -292,18 +200,6 @@ class DownloadManager:
                 if not line:
                     continue
 
-                # Check for DNS/network errors
-                if 'getaddrinfo failed' in line or 'Failed to resolve' in line:
-                    dns_error_count += 1
-                    if dns_error_count == 1:  # Log only once
-                        self._log(task_id, '⚠️ Network/DNS error detected. Retrying...')
-                    continue
-
-                if 'ConnectionResetError' in line or 'Connection broken' in line:
-                    self._log(task_id, '⚠️ Connection issue detected. SpotDL will retry automatically...')
-                    continue
-
-                # Check cancellation quickly
                 with self.tasks_lock:
                     if self.tasks.get(task_id, {}).get('cancelled'):
                         try:
@@ -316,33 +212,32 @@ class DownloadManager:
                 self._parse_progress(task_id, line)
 
             process.wait()
-            
-            # Check if download failed due to network issues
-            if dns_error_count > 10:
-                self._log(task_id, '❌ Download failed: Network/DNS resolution errors. Please check your internet connection.')
-                return {'success': False, 'error': 'Network connectivity issues - DNS resolution failed'}
-            
+
             if process.returncode == 0:
                 return {'success': True}
             return {'success': False, 'error': f'Process exited with code {process.returncode}'}
         except Exception as e:
             logger.error(f"SpotDL execution error: {e}")
-            error_msg = str(e)
-            if 'getaddrinfo failed' in error_msg:
-                error_msg = 'Network error: Cannot resolve Spotify/YouTube domains. Check your internet connection.'
-            return {'success': False, 'error': error_msg}
+            return {'success': False, 'error': str(e)}
         finally:
             with self.tasks_lock:
                 self.processes.pop(task_id, None)
 
-    # ---------------------------- Parsing ---------------------------- #
+    def _clean_title(self, raw_title: str | None) -> str | None:
+        if not raw_title:
+            return None
+        title = raw_title.strip()
+        lower = title.lower()
+        if lower == 'query' or lower == 'query:' or lower.startswith('query:'):
+            return None
+        return title
+
     def _parse_progress(self, task_id: str, line: str):
         with self.tasks_lock:
             task = self.tasks.get(task_id)
             if not task:
                 return
 
-            # Infer total tracks
             m_total = re.search(r"Found\s+(\d+)\s+(songs?|tracks?)", line, re.IGNORECASE)
             if m_total:
                 try:
@@ -350,17 +245,17 @@ class DownloadManager:
                 except Exception:
                     pass
 
-            # Extract title
-            title = None
+            raw_title = None
             m_title_quoted = re.search(r'"([^"\n]+)"', line)
             if m_title_quoted:
-                title = m_title_quoted.group(1)
+                raw_title = m_title_quoted.group(1)
             else:
                 m_processing = re.search(r"(?:Downloading|Processing)[:\s]+(.+)$", line, re.IGNORECASE)
                 if m_processing:
-                    title = m_processing.group(1).strip()
+                    raw_title = m_processing.group(1)
 
-            # Ensure a track entry exists
+            title = self._clean_title(raw_title)
+
             def ensure_track(t_title: str):
                 if not t_title:
                     return None
@@ -390,14 +285,16 @@ class DownloadManager:
                         t['progress'] = percent
 
             if 'downloaded' in lowered or 'completed' in lowered:
-                t = ensure_track(title or task.get('current_track'))
+                target_title = title or self._clean_title(task.get('current_track'))
+                t = ensure_track(target_title)
                 if t and t['status'] != 'completed':
                     t['status'] = 'completed'
                     t['progress'] = 100
                     task['completed_tracks'] = (task.get('completed_tracks') or 0) + 1
 
             if 'failed' in lowered or 'error' in lowered:
-                t = ensure_track(title or task.get('current_track'))
+                target_title = title or self._clean_title(task.get('current_track'))
+                t = ensure_track(target_title)
                 if t and t['status'] != 'failed':
                     t['status'] = 'failed'
                     if percent is None:
@@ -412,7 +309,6 @@ class DownloadManager:
 
             task['updated_at'] = datetime.now().isoformat()
 
-    # ---------------------------- Logging ---------------------------- #
     def _log(self, task_id: str, message: str):
         timestamp = datetime.now().strftime('%H:%M:%S')
         entry = f"[{timestamp}] {message}"
@@ -424,14 +320,9 @@ class DownloadManager:
                     self.tasks[task_id]['logs'] = logs[-300:]
         logger.info(f"Task {task_id}: {message}")
 
-    # ---------------------------- Public API ---------------------------- #
     def get_all_tasks(self) -> List[dict]:
         with self.tasks_lock:
             return list(self.tasks.values())
-
-    def get_task(self, task_id: str) -> Optional[dict]:
-        with self.tasks_lock:
-            return self.tasks.get(task_id)
 
     def get_task_logs(self, task_id: str) -> Optional[List[str]]:
         with self.tasks_lock:
@@ -453,7 +344,6 @@ class DownloadManager:
             task['current_track'] = ''
             proc = self.processes.get(task_id)
 
-        # terminate outside lock
         try:
             if proc and proc.poll() is None:
                 proc.terminate()
@@ -483,23 +373,17 @@ class DownloadManager:
             self.tasks.pop(task_id, None)
         return True
 
-    def retry_failed(self, task_id: str) -> bool:
+    def reset_for_retry(self, task_id: str) -> Optional[dict]:
         with self.tasks_lock:
             task = self.tasks.get(task_id)
-            if not task or task['status'] != 'failed':
-                return False
-            # Reset and restart
+            if not task or task['status'] not in ('failed', 'cancelled'):
+                return None
             task['failed_tracks'] = 0
             task['failed_track_list'] = []
             task['status'] = 'running'
+            task['progress'] = 0
             task['updated_at'] = datetime.now().isoformat()
-
-        import threading
-
-        thread = threading.Thread(
-            target=self.start_download, args=(task_id, task['url'], task.get('download_path'))
-        )
-        thread.daemon = True
-        thread.start()
-        return True
-
+            return {
+                'url': task['url'],
+                'download_path': task.get('download_path'),
+            }

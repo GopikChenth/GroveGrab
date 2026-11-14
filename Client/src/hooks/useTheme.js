@@ -1,39 +1,16 @@
 import { useEffect, useState, useCallback } from 'react'
 
 const THEME_KEY = 'grovegrab.theme'
-const LEGACY_THEME_KEY = 'theme'
 const DEFAULT_THEME = 'light'
 
-// Hook that keeps theme in sync with localStorage, <html>, and <body>
 export default function useTheme() {
   const resolveInitial = () => {
     if (typeof window === 'undefined') return DEFAULT_THEME
-
-    let stored = null
-
     try {
-      stored = localStorage.getItem(THEME_KEY)
-
-      // Migrate legacy key while forcing the new default to light
-      if (!stored) {
-        const legacy = localStorage.getItem(LEGACY_THEME_KEY)
-        if (legacy === 'light') {
-          stored = 'light'
-        } else if (legacy === 'dark') {
-          stored = DEFAULT_THEME
-        }
-        if (legacy === 'light' || legacy === 'dark') {
-          localStorage.removeItem(LEGACY_THEME_KEY)
-          localStorage.setItem(THEME_KEY, stored ?? DEFAULT_THEME)
-        }
+      const stored = localStorage.getItem(THEME_KEY)
+      if (stored === 'light' || stored === 'dark') {
+        return stored
       }
-    } catch {}
-
-    if (stored === 'light' || stored === 'dark') {
-      return stored
-    }
-
-    try {
       localStorage.setItem(THEME_KEY, DEFAULT_THEME)
     } catch {}
     return DEFAULT_THEME
@@ -43,19 +20,13 @@ export default function useTheme() {
 
   useEffect(() => {
     if (typeof document === 'undefined') return
+    const isDark = theme === 'dark'
     const root = document.documentElement
     const body = document.body
 
-    const applyTheme = (value) => {
-      const isDark = value === 'dark'
-      root.classList.toggle('dark', isDark)
-      body.classList.toggle('dark', isDark)
-      root.style.colorScheme = isDark ? 'dark' : 'light'
-      root.dataset.theme = value
-      body.dataset.theme = value
-    }
-
-    applyTheme(theme)
+    root.classList.toggle('dark', isDark)
+    body.classList.toggle('dark', isDark)
+    root.style.colorScheme = isDark ? 'dark' : 'light'
 
     try {
       localStorage.setItem(THEME_KEY, theme)
