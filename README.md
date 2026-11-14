@@ -114,7 +114,7 @@ npm run dev
 ### 4. Run Desktop App (Electron)
 ```bash
 cd Client
-npm run electron:start
+npm run electron:dev
 ```
 
 ---
@@ -139,11 +139,8 @@ The Python backend exposes the following local REST API endpoints on `http://loc
 | :--- | :--- | :--- |
 | `GET` | `/health` | Check backend server health status |
 | `GET / POST` | `/api/config` | Fetch or update Spotify credentials and default download path |
-| `POST` | `/api/validate-url` | Validate Spotify track/playlist/album URL format |
-| `POST` | `/api/preload` | Preload track metadata before downloading |
 | `POST` | `/api/download` | Trigger a new background download task |
 | `GET` | `/api/tasks` | List all active and completed tasks |
-| `GET` | `/api/tasks/:id` | Get status and progress for a specific task |
 | `POST` | `/api/tasks/:id/cancel` | Cancel an active download task |
 | `POST` | `/api/tasks/:id/retry` | Retry failed tracks in a task |
 | `DELETE` | `/api/tasks/:id` | Remove task entry from queue |
